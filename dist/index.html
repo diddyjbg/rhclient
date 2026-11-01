@@ -1,0 +1,13 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Rhythmhel</title>
+<style>html,body{height:100%;margin:0;background:#0c0d1f;color:#eff0ff;font:16px system-ui,sans-serif;display:grid;place-items:center;text-align:center}
+h1{font-weight:300;font-size:38px;margin:0 0 8px}p{color:#9b9fcf}button{margin-top:18px;padding:12px 28px;border:0;border-radius:8px;background:#a8a8e8;color:#0c0d26;font:700 16px system-ui;cursor:pointer}
+.s{width:42px;height:42px;border-radius:50%;border:4px solid #3b3f78;border-top-color:#a8a8e8;margin:0 auto 18px;animation:r 1s linear infinite}@keyframes r{to{transform:rotate(360deg)}}</style></head>
+<body><div id="b"><div class="s"></div><p>Connecting to Rhythmhel…</p></div>
+<script>
+// start page bundled with the app: open the game as soon as the server answers, otherwise offer a retry
+const GAME='https://rhythmhel.app/play.html';
+async function go(){document.getElementById('b').innerHTML='<div class="s"></div><p>Connecting to Rhythmhel…</p>';
+  try{await fetch('https://rhythmhel.app/rhythmhel.png',{mode:'no-cors',cache:'no-store'});location.replace(GAME)}
+  catch{document.getElementById('b').innerHTML="<h1>Can't reach Rhythmhel</h1><p>Check your internet connection, then try again.</p><button onclick='go()'>Try again</button>"}}
+go();
+</script></body></html>

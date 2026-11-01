@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "launcher",
+  "description": "The small start page bundled with the app (shown while connecting and when offline)",
+  "windows": ["main"],
+  "permissions": ["core:default"]
+}

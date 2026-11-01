@@ -1,0 +1,29 @@
+# Builds the Windows installer. Push this folder to GitHub, then open Actions > Build Windows app > the latest run > Artifacts.
+# For Discord: Settings > Secrets and variables > Actions > Variables > New variable: DISCORD_APP_ID = your Discord Application ID.
+name: Build Windows app
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install
+      - run: npx tauri build
+        env:
+          DISCORD_APP_ID: ${{ vars.DISCORD_APP_ID }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Rhythmhel-Windows
+          path: |
+            src-tauri/target/release/bundle/nsis/*.exe
+            src-tauri/target/release/rhythmhel.exe

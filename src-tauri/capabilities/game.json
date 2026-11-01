@@ -1,0 +1,16 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "game",
+  "description": "What the Rhythmhel game page may use inside the app: Discord, fullscreen and opening links in the browser",
+  "windows": ["main"],
+  "remote": { "urls": ["https://rhythmhel.app/*", "https://*.rhythmhel.app/*"] },
+  "permissions": [
+    "core:event:default",
+    "core:window:allow-set-fullscreen",
+    "core:window:allow-is-fullscreen",
+    "opener:default",
+    "allow-discord-activity",
+    "allow-discord-reply",
+    "allow-app-info"
+  ]
+}
