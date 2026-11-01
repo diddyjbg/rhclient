@@ -21,6 +21,11 @@ fn discord_reply(state: tauri::State<'_, discord::Discord>, user_id: String, acc
 }
 
 #[tauri::command]
+fn discord_take_join(state: tauri::State<'_, discord::Discord>) -> Option<String> {
+    state.take_join()
+}
+
+#[tauri::command]
 fn app_info() -> Value {
     json!({ "app": "tauri", "version": env!("CARGO_PKG_VERSION"), "discord": !DISCORD_APP_ID.is_empty() })
 }
@@ -35,7 +40,7 @@ fn main() {
             }
         }))
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![discord_activity, discord_reply, app_info])
+        .invoke_handler(tauri::generate_handler![discord_activity, discord_reply, discord_take_join, app_info])
         .setup(|app| {
             let handle = app.handle().clone();
             let dc = discord::Discord::start(DISCORD_APP_ID, move |ev| {

@@ -11,6 +11,7 @@
     "opener:default",
     "allow-discord-activity",
     "allow-discord-reply",
+    "allow-discord-take-join",
     "allow-app-info"
   ]
 }

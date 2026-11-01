@@ -2,6 +2,7 @@
 // One background thread: it polls the pipe (so it never blocks), sends status updates and passes Discord events to the game.
 use serde_json::{json, Value};
 use std::sync::mpsc::{self, Receiver, Sender};
+use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 
@@ -12,15 +13,32 @@ pub enum Msg {
 
 pub struct Discord {
     tx: Sender<Msg>,
+    /// a "Join" that arrived before the game page was listening (for example when Discord started the app for it)
+    pub pending: Arc<Mutex<Option<String>>>,
 }
 
 impl Discord {
     pub fn start<F: Fn(Value) + Send + 'static>(client_id: &'static str, on_event: F) -> Self {
         let (tx, rx) = mpsc::channel::<Msg>();
+        let pending = Arc::new(Mutex::new(None));
         if !client_id.is_empty() {
-            thread::spawn(move || run(client_id, rx, on_event));
+            let pend = pending.clone();
+            thread::spawn(move || {
+                run(client_id, rx, move |ev: Value| {
+                    if ev["type"] == "join" {
+                        if let Some(sec) = ev["secret"].as_str() {
+                            *pend.lock().unwrap() = Some(sec.to_string());
+                        }
+                    }
+                    on_event(ev)
+                })
+            });
         }
-        Discord { tx }
+        Discord { tx, pending }
+    }
+    /// the game asks for this once it has loaded
+    pub fn take_join(&self) -> Option<String> {
+        self.pending.lock().unwrap().take()
     }
     pub fn set_activity(&self, a: Value) {
         let _ = self.tx.send(Msg::Activity(a));
@@ -83,6 +101,20 @@ fn run<F: Fn(Value)>(client_id: &str, rx: Receiver<Msg>, on_event: F) {
             continue;
         };
         if p.send(0, &json!({ "v": 1, "client_id": client_id })).is_err() { continue; }
+        // Discord answers the handshake with READY; only then does it accept commands
+        let mut ready = false;
+        for _ in 0..100 {
+            match p.available() {
+                None => break,
+                Some(n) if n >= 8 => match p.recv() {
+                    Ok((1, v)) if v["evt"] == "READY" => { on_event(json!({ "type": "ready", "user": v["data"]["user"] })); ready = true; break; }
+                    Ok((2, _)) | Err(_) => break,
+                    _ => {}
+                },
+                _ => thread::sleep(Duration::from_millis(50)),
+            }
+        }
+        if !ready { thread::sleep(Duration::from_secs(5)); continue; }
         let mut ok = true;
         for evt in ["ACTIVITY_JOIN", "ACTIVITY_JOIN_REQUEST"] {
             ok &= p.send(1, &json!({ "cmd": "SUBSCRIBE", "evt": evt, "args": {}, "nonce": next() })).is_ok();
